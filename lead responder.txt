@@ -1,0 +1,141 @@
+{
+  "name": "Instant Lead Capture + Follow-Up Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "lead-capture",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "lead-capture-id"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "YOUR_SHEET_ID_HERE",
+        "range": "Sheet1!A:D",
+        "options": {},
+        "valueInputMode": "USER_ENTERED",
+        "data": [
+          {
+            "values": [
+              "={{$json[\"name\"]}}",
+              "={{$json[\"phone\"]}}",
+              "={{$json[\"interest\"]}}",
+              "={{new Date().toISOString()}}"
+            ]
+          }
+        ]
+      },
+      "name": "Append to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "hours"
+      },
+      "name": "Wait 1 Hour",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "yourbiz@gmail.com",
+        "toEmail": "={{$json[\"email\"]}}",
+        "subject": "Here’s the catalogue you requested! 👗",
+        "text": "Hi {{$json[\"name\"]}},\n\nThank you for showing interest in our products! Here's the catalogue you requested:\n[Insert Catalogue Link Here]\n\nLet us know if you’d like to book a free trial or get more details.\n\nWarm regards,\nYour Boutique Name"
+      },
+      "name": "Send Email to Lead",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "yourbiz@gmail.com",
+        "toEmail": "owner@example.com",
+        "subject": "🎉 New Lead Captured!",
+        "text": "Name: {{$json[\"name\"]}}\nPhone: {{$json[\"phone\"]}}\nInterest: {{$json[\"interest\"]}}"
+      },
+      "name": "Notify Business Owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait 1 Hour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1 Hour": {
+      "main": [
+        [
+          {
+            "node": "Send Email to Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email to Lead": {
+      "main": [
+        [
+          {
+            "node": "Notify Business Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "lead-capture-workflow"
+}
